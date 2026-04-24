@@ -9,6 +9,7 @@ final class UserController
     private GetAllUsersPort $getAllUsersPort;
     private GetUserByIdPort $getUserByIdPort;
     private UserWebMapper $userWebMapper;
+    private EmailNotificationService $emailNotificationService;
 
     public function __construct(
         CreateUserUseCase $createUserUseCase,
@@ -17,7 +18,8 @@ final class UserController
         LoginUseCase $loginUseCase,
         GetAllUsersPort $getAllUsersPort,
         GetUserByIdPort $getUserByIdPort,
-        UserWebMapper $userWebMapper
+        UserWebMapper $userWebMapper,
+        EmailNotificationService $emailNotificationService
     ) {
         $this->createUserUseCase = $createUserUseCase;
         $this->updateUserUseCase = $updateUserUseCase;
@@ -26,6 +28,7 @@ final class UserController
         $this->getAllUsersPort = $getAllUsersPort;
         $this->getUserByIdPort = $getUserByIdPort;
         $this->userWebMapper = $userWebMapper;
+        $this->emailNotificationService = $emailNotificationService;
     }
 
     public function home(): void
@@ -52,8 +55,20 @@ final class UserController
     public function store(CreateUserRequest $request): void
     {
         $this->createUserUseCase->execute($this->userWebMapper->fromCreateRequestToCommand($request));
+
+        $sent = $this->emailNotificationService->sendWelcome(
+            $request->email,
+            $request->name,
+            $request->password,
+            $request->role !== '' ? strtoupper($request->role) : UserRoleEnum::default()->value
+        );
+
+        if (!$sent) {
+            Flash::setMessage('Usuario creado, pero no se pudo enviar el correo de bienvenida. Revisa storage/mail.log.');
+        }
+
         Flash::setSuccess('Usuario creado correctamente.');
-        View::redirect('users.index');
+        View::redirect('auth.login');
     }
 
     public function show(string $id): void
@@ -73,19 +88,42 @@ final class UserController
             'user' => $this->userWebMapper->fromModelToResponse($user),
             'roleOptions' => $this->roleOptions(),
             'statusOptions' => $this->statusOptions(),
+            'canManageSecurity' => $this->isAdminSession(),
         ]));
     }
 
     public function update(UpdateUserRequest $request): void
     {
-        $this->updateUserUseCase->execute($this->userWebMapper->fromUpdateRequestToCommand($request));
+        $sanitizedRequest = $request;
+
+        if (!$this->isAdminSession()) {
+            $sanitizedRequest = new UpdateUserRequest(
+                $request->id,
+                $request->name,
+                $request->email,
+                '',
+                '',
+                ''
+            );
+        }
+
+        $this->updateUserUseCase->execute($this->userWebMapper->fromUpdateRequestToCommand($sanitizedRequest));
         Flash::setSuccess('Usuario actualizado correctamente.');
         View::redirect('users.index');
     }
 
     public function delete(string $id): void
     {
+        $isCurrentUser = isset($_SESSION['auth']['id']) && (string) $_SESSION['auth']['id'] === $id;
+
         $this->deleteUserUseCase->execute($this->userWebMapper->fromIdToDeleteCommand($id));
+
+        if ($isCurrentUser) {
+            unset($_SESSION['auth']);
+            Flash::setSuccess('Tu usuario fue eliminado y la sesion se cerro automaticamente.');
+            View::redirect('home');
+        }
+
         Flash::setSuccess('Usuario eliminado correctamente.');
         View::redirect('users.index');
     }
@@ -173,5 +211,10 @@ final class UserController
         }
 
         return $options;
+    }
+
+    private function isAdminSession(): bool
+    {
+        return isset($_SESSION['auth']['role']) && (string) $_SESSION['auth']['role'] === UserRoleEnum::ADMIN->value;
     }
 }

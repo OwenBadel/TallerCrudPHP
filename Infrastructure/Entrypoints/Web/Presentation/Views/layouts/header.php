@@ -18,6 +18,9 @@ $pageTitle = isset($pageTitle) ? $pageTitle : 'CRUD Usuarios';
             background: #f6f3ee;
             color: #1f2937;
         }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
         .shell {
             max-width: 1100px;
             margin: 0 auto;
@@ -56,26 +59,79 @@ $pageTitle = isset($pageTitle) ? $pageTitle : 'CRUD Usuarios';
             border-radius: 10px;
             font: inherit;
         }
-        button {
-            background: #0f766e;
-            color: #fff;
-            border: none;
-            cursor: pointer;
+        label {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-weight: 600;
         }
-        button:hover { background: #115e59; }
-        .grid {
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .field--full {
+            grid-column: 1 / -1;
+        }
+        .form-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 16px;
         }
+        .form-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .btn,
+        button,
+        .actions a {
+            background: #0f766e;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .btn:hover,
+        button:hover,
+        .actions a:hover { background: #115e59; text-decoration: none; }
+        .btn--secondary,
+        .actions .btn--secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+        .btn--secondary:hover,
+        .actions .btn--secondary:hover { background: #d1d5db; }
+        .btn--danger,
+        .actions .btn--danger {
+            background: #b91c1c;
+            color: #fff;
+        }
+        .btn--danger:hover,
+        .actions .btn--danger:hover { background: #991b1b; }
         .actions {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
+            align-items: center;
         }
+        .actions form { margin: 0; }
         .muted { color: #6b7280; }
         @media (max-width: 720px) {
-            .grid { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
             .brand { flex-direction: column; align-items: flex-start; gap: 8px; }
         }
     </style>

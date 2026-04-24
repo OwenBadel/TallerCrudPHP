@@ -23,16 +23,19 @@
     <?php endif; ?>
 
     <?php $old = is_array($old ?? null) ? $old : []; ?>
-    <form action="?route=auth.authenticate" method="post" style="max-width:420px;">
-        <label>Email
-            <input type="email" name="email" value="<?= htmlspecialchars((string) ($old['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
-        </label>
-        <br><br>
-        <label>Contraseña
-            <input type="password" name="password" required>
-        </label>
-        <br><br>
-        <button type="submit">Entrar</button>
+    <form action="?route=auth.authenticate" method="post" class="form-stack" style="max-width:420px;">
+        <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" name="email" value="<?= htmlspecialchars((string) ($old['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+        </div>
+        <div class="field">
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" name="password" required>
+        </div>
+        <div class="form-actions" style="justify-content:flex-start;">
+            <a class="btn btn--secondary" href="?route=home">Cancelar</a>
+            <button class="btn" type="submit">Entrar</button>
+        </div>
     </form>
 </section>
 

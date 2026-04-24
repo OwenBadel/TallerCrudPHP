@@ -2,19 +2,19 @@
 
 require_once __DIR__ . '/../Ports/In/UpdateUserUseCase.php';
 require_once __DIR__ . '/../Ports/Out/GetUserByIdPort.php';
-require_once __DIR__ . '/../Ports/Out/SaveUserPort.php';
+require_once __DIR__ . '/../Ports/Out/UpdateUserPort.php';
 
 final class UpdateUserService implements UpdateUserUseCase
 {
     private GetUserByIdPort $getUserByIdPort;
-    private SaveUserPort $saveUserPort;
+    private UpdateUserPort $updateUserPort;
 
     public function __construct(
         GetUserByIdPort $getUserByIdPort,
-        SaveUserPort $saveUserPort
+        UpdateUserPort $updateUserPort
     ) {
         $this->getUserByIdPort = $getUserByIdPort;
-        $this->saveUserPort = $saveUserPort;
+        $this->updateUserPort = $updateUserPort;
     }
 
     public function execute(UpdateUserCommand $command): UserModel
@@ -39,7 +39,7 @@ final class UpdateUserService implements UpdateUserUseCase
             $this->resolveStatus($command->status, $currentUser->status())
         );
 
-        return $this->saveUserPort->save($updatedUser);
+        return $this->updateUserPort->update($updatedUser);
     }
 
     private function resolveRole(string $role, UserRoleEnum $fallback): UserRoleEnum

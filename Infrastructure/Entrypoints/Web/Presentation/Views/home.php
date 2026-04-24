@@ -35,16 +35,6 @@
                 <li><a href="?route=auth.logout">Exit</a></li>
             </ol>
         </div>
-
-        <div class="panel" style="background:#f8fafc;">
-            <h2 style="margin-top:0;">Resumen</h2>
-            <ul>
-                <li>Arquitectura hexagonal</li>
-                <li>DDD puro en dominio</li>
-                <li>PDO con sentencias preparadas</li>
-                <li>Flujo PRG con Flash</li>
-            </ul>
-        </div>
     </div>
 </section>
 

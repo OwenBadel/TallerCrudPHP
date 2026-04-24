@@ -1,12 +1,13 @@
 <?php
 
 require_once __DIR__ . '/../../Application/Ports/Out/SaveUserPort.php';
+require_once __DIR__ . '/../../Application/Ports/Out/UpdateUserPort.php';
 require_once __DIR__ . '/../../Application/Ports/Out/GetUserByEmailPort.php';
 require_once __DIR__ . '/../../Application/Ports/Out/GetUserByIdPort.php';
 require_once __DIR__ . '/../../Application/Ports/Out/DeleteUserPort.php';
 require_once __DIR__ . '/../../Application/Ports/Out/GetAllUsersPort.php';
 
-final class UserRepositoryMySQL implements SaveUserPort, GetUserByEmailPort, GetUserByIdPort, DeleteUserPort, GetAllUsersPort
+final class UserRepositoryMySQL implements SaveUserPort, UpdateUserPort, GetUserByEmailPort, GetUserByIdPort, DeleteUserPort, GetAllUsersPort
 {
     private PDO $pdo;
     private UserPersistenceMapper $mapper;

@@ -69,6 +69,18 @@ try {
         case 'auth.forgot.send':
             handleForgotPasswordRequest($container);
             break;
+        case 'auth.forgot.code':
+            handleForgotCodePage($container);
+            break;
+        case 'auth.forgot.code.check':
+            handleForgotCodeCheck($container);
+            break;
+        case 'auth.forgot.reset':
+            handleForgotResetPage($container);
+            break;
+        case 'auth.forgot.reset.submit':
+            handleForgotResetSubmit($container);
+            break;
         default:
             throw new RuntimeException(sprintf('La accion para la ruta "%s" no esta implementada.', $routeName));
     }
@@ -116,7 +128,7 @@ function buildLoginWebRequest(): LoginWebRequest
 function handleForgotPasswordRequest(DependencyInjection $container): void
 {
     $email = trim((string) ($_POST['email'] ?? ''));
-    $repository = $container->getUserRepository();
+    $recoveryService = $container->getPasswordRecoveryService();
 
     if ($email === '') {
         Flash::setMessage('Ingresa un correo valido.');
@@ -124,25 +136,108 @@ function handleForgotPasswordRequest(DependencyInjection $container): void
     }
 
     try {
-        $userEmail = new UserEmail($email);
-        $user = $repository->getByEmail($userEmail);
-
-        if ($user !== null && $user->status() === UserStatusEnum::ACTIVE) {
-            $tempPassword = bin2hex(random_bytes(5));
-            $notificationService = $container->getEmailNotificationService();
-            if (!$notificationService->sendPasswordRecovery($user->email()->value(), $user->name()->value(), $tempPassword)) {
-                Flash::setMessage('No fue posible enviar el correo de recuperacion. Revisa la configuracion SMTP y el log storage/mail.log.');
-                View::redirect('auth.forgot');
-            }
-
-            $updatedUser = $user->changePassword(UserPassword::fromPlainText($tempPassword));
-            $repository->update($updatedUser);
+        if (!$recoveryService->requestCode($email)) {
+            Flash::setMessage($recoveryService->lastError() !== '' ? $recoveryService->lastError() : 'No fue posible iniciar la recuperacion.');
+            View::redirect('auth.forgot');
         }
 
-        Flash::setSuccess('Si el correo existe, recibirás instrucciones para recuperar tu contraseña.');
-        View::redirect('auth.forgot');
+        Flash::setSuccess('Te enviamos un codigo de 6 digitos a tu correo.');
+        View::redirect('auth.forgot.code');
     } catch (Throwable $exception) {
         Flash::setMessage($exception->getMessage());
         View::redirect('auth.forgot');
+    }
+}
+
+function handleForgotCodePage(DependencyInjection $container): void
+{
+    $recoveryService = $container->getPasswordRecoveryService();
+
+    if (!$recoveryService->hasPendingChallenge()) {
+        Flash::setMessage('Primero debes solicitar el codigo de recuperacion.');
+        View::redirect('auth.forgot');
+    }
+
+    View::render('auth/forgot-code', [
+        'pageTitle' => 'Verificar codigo',
+        'message' => Flash::message(),
+        'success' => Flash::success(),
+        'email' => $recoveryService->challengeEmail(),
+    ]);
+}
+
+function handleForgotCodeCheck(DependencyInjection $container): void
+{
+    $code = trim((string) ($_POST['code'] ?? ''));
+    $recoveryService = $container->getPasswordRecoveryService();
+
+    if ($code === '') {
+        Flash::setMessage('Ingresa el codigo de 6 digitos.');
+        View::redirect('auth.forgot.code');
+    }
+
+    if (!$recoveryService->verifyCode($code)) {
+        Flash::setMessage($recoveryService->lastError() !== '' ? $recoveryService->lastError() : 'El codigo no es valido.');
+        View::redirect('auth.forgot.code');
+    }
+
+    Flash::setSuccess('Codigo verificado. Ahora puedes crear tu nueva contraseña.');
+    View::redirect('auth.forgot.reset');
+}
+
+function handleForgotResetPage(DependencyInjection $container): void
+{
+    $recoveryService = $container->getPasswordRecoveryService();
+
+    if (!$recoveryService->hasPendingChallenge()) {
+        Flash::setMessage('Primero debes solicitar y verificar el codigo de recuperacion.');
+        View::redirect('auth.forgot');
+    }
+
+    if (empty($_SESSION['password_recovery']['verified'])) {
+        Flash::setMessage('Primero debes verificar el codigo de recuperacion.');
+        View::redirect('auth.forgot.code');
+    }
+
+    View::render('auth/forgot-reset', [
+        'pageTitle' => 'Nueva contraseña',
+        'message' => Flash::message(),
+        'success' => Flash::success(),
+        'email' => $recoveryService->challengeEmail(),
+    ]);
+}
+
+function handleForgotResetSubmit(DependencyInjection $container): void
+{
+    $password = (string) ($_POST['password'] ?? '');
+    $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+    $recoveryService = $container->getPasswordRecoveryService();
+
+    if (!$recoveryService->hasPendingChallenge() || empty($_SESSION['password_recovery']['verified'])) {
+        Flash::setMessage('Primero debes verificar el codigo de recuperacion.');
+        View::redirect('auth.forgot');
+    }
+
+    if ($password === '' || $confirmPassword === '') {
+        Flash::setMessage('Completa ambos campos de contraseña.');
+        View::redirect('auth.forgot.reset');
+    }
+
+    if ($password !== $confirmPassword) {
+        Flash::setMessage('Las contraseñas no coinciden.');
+        View::redirect('auth.forgot.reset');
+    }
+
+    try {
+        if (!$recoveryService->resetPassword($password)) {
+            Flash::setMessage($recoveryService->lastError() !== '' ? $recoveryService->lastError() : 'No fue posible actualizar la contraseña.');
+            View::redirect('auth.forgot.reset');
+        }
+
+        Flash::setSuccess('Tu contraseña fue actualizada correctamente. Ahora inicia sesión.');
+        View::redirect('auth.login');
+    } catch (Throwable $exception) {
+        Flash::setMessage($exception->getMessage());
+        View::redirect('auth.forgot.reset');
     }
 }

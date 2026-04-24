@@ -23,12 +23,15 @@
     <?php endif; ?>
 
     <?php $old = is_array($old ?? null) ? $old : []; ?>
-    <form action="?route=auth.forgot.send" method="post" style="max-width:420px;">
-        <label>Email
-            <input type="email" name="email" value="<?= htmlspecialchars((string) ($old['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
-        </label>
-        <br><br>
-        <button type="submit">Enviar instrucciones</button>
+    <form action="?route=auth.forgot.send" method="post" class="form-stack" style="max-width:420px;">
+        <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" name="email" value="<?= htmlspecialchars((string) ($old['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+        </div>
+        <div class="form-actions" style="justify-content:flex-start;">
+            <a class="btn btn--secondary" href="?route=auth.login">Volver</a>
+            <button class="btn" type="submit">Enviar instrucciones</button>
+        </div>
     </form>
 </section>
 

@@ -24,30 +24,36 @@
     <?php endif; ?>
 
     <?php $old = is_array($old ?? null) ? $old : []; ?>
-    <form action="?route=users.store" method="post">
-        <div class="grid">
-            <label>ID
-                <input type="text" name="id" value="<?= htmlspecialchars((string) ($old['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-            </label>
-            <label>Nombre
-                <input type="text" name="name" value="<?= htmlspecialchars((string) ($old['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
-            </label>
-            <label>Email
-                <input type="email" name="email" value="<?= htmlspecialchars((string) ($old['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
-            </label>
-            <label>Contraseña
-                <input type="password" name="password" required>
-            </label>
-            <label>Rol
-                <select name="role">
+    <form action="?route=users.store" method="post" class="form-stack">
+        <div class="form-grid">
+            <div class="field">
+                <label for="id">ID</label>
+                <input id="id" type="text" name="id" value="<?= htmlspecialchars((string) ($old['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            </div>
+            <div class="field">
+                <label for="name">Nombre</label>
+                <input id="name" type="text" name="name" value="<?= htmlspecialchars((string) ($old['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+            </div>
+            <div class="field">
+                <label for="email">Email</label>
+                <input id="email" type="email" name="email" value="<?= htmlspecialchars((string) ($old['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+            </div>
+            <div class="field">
+                <label for="password">Contraseña</label>
+                <input id="password" type="password" name="password" required>
+            </div>
+            <div class="field field--full">
+                <label for="role">Rol</label>
+                <select id="role" name="role">
                     <?php foreach (($roleOptions ?? []) as $option): ?>
                         <option value="<?= htmlspecialchars((string) $option, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $option, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
-            </label>
+            </div>
         </div>
-        <div style="margin-top:16px;">
-            <button type="submit">Guardar</button>
+        <div class="form-actions">
+            <a class="btn btn--secondary" href="?route=home">Cancelar</a>
+            <button class="btn" type="submit">Guardar</button>
         </div>
     </form>
 </section>

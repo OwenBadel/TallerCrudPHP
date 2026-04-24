@@ -64,6 +64,11 @@ final class DependencyInjection
         return new EmailNotificationService();
     }
 
+    public function getPasswordRecoveryService(): PasswordRecoveryService
+    {
+        return new PasswordRecoveryService($this->getUserRepository(), $this->getEmailNotificationService());
+    }
+
     public function getUserController(): UserController
     {
         $repository = $this->getUserRepository();
@@ -75,7 +80,8 @@ final class DependencyInjection
             $this->getLoginUseCase(),
             $repository,
             $repository,
-            $this->getUserWebMapper()
+            $this->getUserWebMapper(),
+            $this->getEmailNotificationService()
         );
     }
 }

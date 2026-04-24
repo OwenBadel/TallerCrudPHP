@@ -4,12 +4,40 @@ final class EmailNotificationService
 {
     private string $lastError = '';
 
+    public function sendRecoveryCode(string $email, string $name, string $code): bool
+    {
+        $htmlBody = $this->renderRecoveryCodeTemplate($email, $name, $code);
+        $subject = '=?UTF-8?B?' . base64_encode('Codigo de recuperacion') . '?=';
+
+        $sent = $this->sendHtmlEmail($email, $subject, $htmlBody);
+
+        if (!$sent) {
+            $this->logFailure($email, $this->lastError !== '' ? $this->lastError : 'No se pudo entregar el codigo de recuperacion por SMTP.');
+        }
+
+        return $sent;
+    }
+
+    public function sendWelcome(string $email, string $name, string $tempPassword, string $role): bool
+    {
+        $htmlBody = $this->renderWelcomeTemplate($email, $name, $tempPassword, $role);
+        $subject = '=?UTF-8?B?' . base64_encode('Bienvenido al sistema') . '?=';
+
+        $sent = $this->sendHtmlEmail($email, $subject, $htmlBody);
+
+        if (!$sent) {
+            $this->logFailure($email, $this->lastError !== '' ? $this->lastError : 'No se pudo entregar el correo de bienvenida por SMTP.');
+        }
+
+        return $sent;
+    }
+
     public function sendPasswordRecovery(string $email, string $name, string $tempPassword): bool
     {
         $htmlBody = $this->renderPasswordRecoveryTemplate($email, $name, $tempPassword);
         $subject = '=?UTF-8?B?' . base64_encode('Recuperacion de contrasena') . '?=';
 
-        $sent = $this->sendViaSmtp($email, $subject, $htmlBody);
+        $sent = $this->sendHtmlEmail($email, $subject, $htmlBody);
 
         if (!$sent) {
             $this->logFailure($email, $this->lastError !== '' ? $this->lastError : 'No se pudo entregar el correo por SMTP.');
@@ -21,6 +49,37 @@ final class EmailNotificationService
     public function lastError(): string
     {
         return $this->lastError;
+    }
+
+    private function renderWelcomeTemplate(string $email, string $name, string $tempPassword, string $role): string
+    {
+        $templateFile = __DIR__ . '/../Entrypoints/Web/Presentation/Views/emails/welcome.php';
+
+        ob_start();
+        extract([
+            'email' => $email,
+            'name' => $name,
+            'tempPassword' => $tempPassword,
+            'role' => $role,
+        ], EXTR_SKIP);
+        require $templateFile;
+
+        return (string) ob_get_clean();
+    }
+
+    private function renderRecoveryCodeTemplate(string $email, string $name, string $code): string
+    {
+        $templateFile = __DIR__ . '/../Entrypoints/Web/Presentation/Views/emails/recovery-code.php';
+
+        ob_start();
+        extract([
+            'email' => $email,
+            'name' => $name,
+            'code' => $code,
+        ], EXTR_SKIP);
+        require $templateFile;
+
+        return (string) ob_get_clean();
     }
 
     private function renderPasswordRecoveryTemplate(string $email, string $name, string $tempPassword): string
@@ -38,7 +97,7 @@ final class EmailNotificationService
         return (string) ob_get_clean();
     }
 
-    private function sendViaSmtp(string $to, string $subject, string $htmlBody): bool
+    private function sendHtmlEmail(string $to, string $subject, string $htmlBody): bool
     {
         $this->lastError = '';
 

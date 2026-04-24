@@ -3,6 +3,7 @@
 
 <?php $old = is_array($old ?? null) ? $old : []; ?>
 <?php $userArray = $user instanceof UserResponse ? $user->toArray() : (array) $user; ?>
+<?php $canManageSecurity = !empty($canManageSecurity); ?>
 
 <section class="panel">
     <h1><?= htmlspecialchars($pageTitle ?? 'Editar usuario', ENT_QUOTES, 'UTF-8') ?></h1>
@@ -26,39 +27,52 @@
         </div>
     <?php endif; ?>
 
-    <form action="?route=users.update" method="post">
+    <form action="?route=users.update" method="post" class="form-stack">
         <input type="hidden" name="id" value="<?= htmlspecialchars((string) ($old['id'] ?? $userArray['id']), ENT_QUOTES, 'UTF-8') ?>">
-        <div class="grid">
-            <label>Nombre
-                <input type="text" name="name" value="<?= htmlspecialchars((string) ($old['name'] ?? $userArray['name']), ENT_QUOTES, 'UTF-8') ?>" required>
-            </label>
-            <label>Email
-                <input type="email" name="email" value="<?= htmlspecialchars((string) ($old['email'] ?? $userArray['email']), ENT_QUOTES, 'UTF-8') ?>" required>
-            </label>
-            <label>Contraseña nueva
-                <input type="password" name="password" placeholder="Dejar vacio para no cambiarla">
-            </label>
-            <label>Rol
-                <select name="role">
-                    <?php foreach (($roleOptions ?? []) as $option): ?>
-                        <option value="<?= htmlspecialchars((string) $option, ENT_QUOTES, 'UTF-8') ?>" <?= (($old['role'] ?? $userArray['role']) === $option) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars((string) $option, ENT_QUOTES, 'UTF-8') ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label>Estado
-                <select name="status">
-                    <?php foreach (($statusOptions ?? []) as $option): ?>
-                        <option value="<?= htmlspecialchars((string) $option, ENT_QUOTES, 'UTF-8') ?>" <?= (($old['status'] ?? $userArray['status']) === $option) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars((string) $option, ENT_QUOTES, 'UTF-8') ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
+        <div class="form-grid">
+            <div class="field">
+                <label for="name">Nombre</label>
+                <input id="name" type="text" name="name" value="<?= htmlspecialchars((string) ($old['name'] ?? $userArray['name']), ENT_QUOTES, 'UTF-8') ?>" required>
+            </div>
+            <div class="field">
+                <label for="email">Email</label>
+                <input id="email" type="email" name="email" value="<?= htmlspecialchars((string) ($old['email'] ?? $userArray['email']), ENT_QUOTES, 'UTF-8') ?>" required>
+            </div>
+            <?php if ($canManageSecurity): ?>
+                <div class="field">
+                    <label for="role">Rol</label>
+                    <select id="role" name="role">
+                        <?php foreach (($roleOptions ?? []) as $option): ?>
+                            <option value="<?= htmlspecialchars((string) $option, ENT_QUOTES, 'UTF-8') ?>" <?= (($old['role'] ?? $userArray['role']) === $option) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars((string) $option, ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="password">Contraseña nueva</label>
+                    <input id="password" type="password" name="password" placeholder="Dejar vacio para no cambiarla">
+                </div>
+                <div class="field field--full">
+                    <label for="status">Estado</label>
+                    <select id="status" name="status">
+                        <?php foreach (($statusOptions ?? []) as $option): ?>
+                            <option value="<?= htmlspecialchars((string) $option, ENT_QUOTES, 'UTF-8') ?>" <?= (($old['status'] ?? $userArray['status']) === $option) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars((string) $option, ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php else: ?>
+                <div class="field field--full">
+                    <label>Permisos</label>
+                    <p class="muted" style="margin:0;">Solo un usuario ADMIN puede cambiar rol, estado y contraseña.</p>
+                </div>
+            <?php endif; ?>
         </div>
-        <div style="margin-top:16px;">
-            <button type="submit">Actualizar</button>
+        <div class="form-actions">
+            <a class="btn btn--secondary" href="?route=users.index">Cancelar</a>
+            <button class="btn" type="submit">Actualizar</button>
         </div>
     </form>
 </section>
