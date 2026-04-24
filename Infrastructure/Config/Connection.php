@@ -7,11 +7,11 @@ final class Connection
 
     private function __construct()
     {
-        $host = defined('DB_HOST') ? DB_HOST : '127.0.0.1';
+        $host = defined('DB_HOST') ? DB_HOST : 'localhost';
         $port = defined('DB_PORT') ? DB_PORT : '3306';
         $database = defined('DB_NAME') ? DB_NAME : 'crud_usuarios';
         $username = defined('DB_USER') ? DB_USER : 'root';
-        $password = defined('DB_PASS') ? DB_PASS : '';
+        $password = defined('DB_PASS') ? DB_PASS : 'secret';
 
         $dsn = sprintf(
             'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',

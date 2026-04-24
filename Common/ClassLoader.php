@@ -34,6 +34,7 @@ final class ClassLoader
             $basePath . '/Infrastructure/Config',
             $basePath . '/Infrastructure/Mapper',
             $basePath . '/Infrastructure/Repositories',
+            $basePath . '/Infrastructure/Services',
             $basePath . '/Infrastructure/Entrypoints/Web/Config',
             $basePath . '/Infrastructure/Entrypoints/Web/Controllers',
             $basePath . '/Infrastructure/Entrypoints/Web/Dto',

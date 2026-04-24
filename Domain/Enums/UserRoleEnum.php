@@ -3,10 +3,11 @@
 enum UserRoleEnum: string
 {
     case ADMIN = 'ADMIN';
-    case USER = 'USER';
+    case MEMBER = 'MEMBER';
+    case REVIEWER = 'REVIEWER';
 
     public static function default(): self
     {
-        return self::USER;
+        return self::MEMBER;
     }
 }

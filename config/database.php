@@ -17,6 +17,6 @@ if (!defined('DB_USER')) {
 }
 
 if (!defined('DB_PASS')) {
-    define('DB_PASS', getenv('DB_PASS') !== false ? (string) getenv('DB_PASS') : '');
+    define('DB_PASS', getenv('DB_PASS') !== false ? (string) getenv('DB_PASS') : 'secret');
 }
 

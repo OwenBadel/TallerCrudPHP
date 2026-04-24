@@ -59,6 +59,11 @@ final class DependencyInjection
         return new UserWebMapper();
     }
 
+    public function getEmailNotificationService(): EmailNotificationService
+    {
+        return new EmailNotificationService();
+    }
+
     public function getUserController(): UserController
     {
         $repository = $this->getUserRepository();
