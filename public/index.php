@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/smtp.php';
 require_once __DIR__ . '/../Common/ClassLoader.php';
 require_once __DIR__ . '/../Common/DependencyInjection.php';
 
@@ -153,14 +155,143 @@ function sendPasswordRecoveryEmail(string $email, string $name, string $tempPass
     require $templateFile;
     $htmlBody = (string) ob_get_clean();
 
-    $subject = '=?UTF-8?B?' . base64_encode('Recuperacion de contraseña') . '?=';
+    $subject = '=?UTF-8?B?' . base64_encode('Recuperacion de contrasena') . '?=';
     $headers = implode("\r\n", [
         'MIME-Version: 1.0',
         'Content-Type: text/html; charset=UTF-8',
-        'From: CRUD Usuarios <no-reply@crud-usuarios.local>',
+        'From: ' . SMTP_FROM_NAME . ' <' . SMTP_FROM_ADDRESS . '>',
     ]);
 
-    if (function_exists('mail')) {
+    $sent = sendWithSmtp($email, $subject, $htmlBody);
+
+    if (!$sent && function_exists('mail')) {
         @mail($email, $subject, $htmlBody, $headers);
     }
+}
+
+function sendWithSmtp(string $to, string $subject, string $htmlBody): bool
+{
+    if (SMTP_HOST === '' || SMTP_PORT <= 0 || SMTP_USERNAME === '' || SMTP_PASSWORD === '') {
+        return false;
+    }
+
+    $socket = @stream_socket_client(
+        'tcp://' . SMTP_HOST . ':' . SMTP_PORT,
+        $errorNumber,
+        $errorMessage,
+        20
+    );
+
+    if (!is_resource($socket)) {
+        return false;
+    }
+
+    stream_set_timeout($socket, 20);
+
+    if (!smtpExpect($socket, [220])) {
+        fclose($socket);
+        return false;
+    }
+
+    if (!smtpCommand($socket, 'EHLO localhost', [250])) {
+        fclose($socket);
+        return false;
+    }
+
+    if (SMTP_PORT === 587) {
+        if (!smtpCommand($socket, 'STARTTLS', [220])) {
+            fclose($socket);
+            return false;
+        }
+
+        if (@stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT) !== true) {
+            fclose($socket);
+            return false;
+        }
+
+        if (!smtpCommand($socket, 'EHLO localhost', [250])) {
+            fclose($socket);
+            return false;
+        }
+    }
+
+    if (!smtpCommand($socket, 'AUTH LOGIN', [334])) {
+        fclose($socket);
+        return false;
+    }
+
+    if (!smtpCommand($socket, base64_encode(SMTP_USERNAME), [334])) {
+        fclose($socket);
+        return false;
+    }
+
+    if (!smtpCommand($socket, base64_encode(SMTP_PASSWORD), [235])) {
+        fclose($socket);
+        return false;
+    }
+
+    if (!smtpCommand($socket, 'MAIL FROM:<' . SMTP_FROM_ADDRESS . '>', [250])) {
+        fclose($socket);
+        return false;
+    }
+
+    if (!smtpCommand($socket, 'RCPT TO:<' . $to . '>', [250, 251])) {
+        fclose($socket);
+        return false;
+    }
+
+    if (!smtpCommand($socket, 'DATA', [354])) {
+        fclose($socket);
+        return false;
+    }
+
+    $headers = [
+        'MIME-Version: 1.0',
+        'Content-Type: text/html; charset=UTF-8',
+        'From: ' . SMTP_FROM_NAME . ' <' . SMTP_FROM_ADDRESS . '>',
+        'To: <' . $to . '>',
+        'Subject: ' . $subject,
+    ];
+
+    $data = implode("\r\n", $headers) . "\r\n\r\n" . $htmlBody . "\r\n.\r\n";
+    fwrite($socket, $data);
+
+    $accepted = smtpExpect($socket, [250]);
+    smtpCommand($socket, 'QUIT', [221]);
+    fclose($socket);
+
+    return $accepted;
+}
+
+function smtpCommand($socket, string $command, array $expectedCodes): bool
+{
+    fwrite($socket, $command . "\r\n");
+
+    return smtpExpect($socket, $expectedCodes);
+}
+
+function smtpExpect($socket, array $expectedCodes): bool
+{
+    $response = '';
+
+    while (!feof($socket)) {
+        $line = fgets($socket, 512);
+        if ($line === false) {
+            break;
+        }
+
+        $response .= $line;
+
+        if (strlen($line) >= 4 && $line[3] === ' ') {
+            break;
+        }
+    }
+
+    if (strlen($response) < 3) {
+        return false;
+    }
+
+    $code = (int) substr($response, 0, 3);
+
+    return in_array($code, $expectedCodes, true);
 }

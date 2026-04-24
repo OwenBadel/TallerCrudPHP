@@ -61,12 +61,15 @@ final class DependencyInjection
 
     public function getUserController(): UserController
     {
+        $repository = $this->getUserRepository();
+
         return new UserController(
             $this->getCreateUserUseCase(),
             $this->getUpdateUserUseCase(),
             $this->getDeleteUserUseCase(),
             $this->getLoginUseCase(),
-            $this->getUserRepository(),
+            $repository,
+            $repository,
             $this->getUserWebMapper()
         );
     }
